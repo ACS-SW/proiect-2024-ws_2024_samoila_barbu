@@ -17,22 +17,19 @@ except Exception as e:
 
 print("Number of triples in the graph:", len(g))
 
-# Print a sample of the graph to verify
-for s, p, o in list(g)[:10]:  # Print only the first 10 triples
+for s, p, o in list(g)[:10]:
     print(s, p, o)
 
-# Read the CSV file into a DataFrame
 df = pd.read_csv('top_10000_1960-now.csv')
 
-# Define namespaces
 ex = Namespace("https://open.spotify.com/")
-mo = Namespace("http://purl.org/ontology/mo/")  # Music Ontology
+mo = Namespace("http://purl.org/ontology/mo/")
 
-# Bind namespaces to the graph
+
 g.bind("ex", ex)
 g.bind("mo", mo)
 
-# Define a function to modify URIs
+
 def modify_uri(uri):
     if pd.isna(uri):
         return "unknown"
@@ -41,15 +38,12 @@ def modify_uri(uri):
         modified_uri = first_uri.replace("spotify:", "").replace(":", "/")
         return modified_uri
 
-# Iterate over each row in CSV
 for index, row in df.iterrows():
-    # Create modified URIs for track, artist, and album
     modified_track_uri = URIRef(ex + modify_uri(row['Track URI']))
     modified_artist_uri = URIRef(ex + modify_uri(row['Artist URI(s)']))
     modified_album_uri = URIRef(ex + modify_uri(row['Album URI']))
     modified_album_artist_uri = URIRef(ex + modify_uri(row['Album Artist URI(s)']))
 
-    # Add triples for track using modified URIs
     g.add((modified_track_uri, RDF.type, mo.Track))
     g.add((modified_track_uri, mo.track_number, Literal(row['Track Number'], datatype=XSD.integer)))
     g.add((modified_track_uri, mo.trackName, Literal(row['Track Name'])))
@@ -65,18 +59,15 @@ for index, row in df.iterrows():
     g.add((modified_track_uri, ex.danceability, Literal(row['Danceability'], datatype=XSD.float)))
     g.add((modified_track_uri, ex.liveness, Literal(row['Liveness'], datatype=XSD.float)))
 
-    # Add triples for artist using modified URIs
     g.add((modified_artist_uri, RDF.type, mo.MusicArtist))
     g.add((modified_artist_uri, mo.name, Literal(row['Artist Name(s)'])))
 
-    # Add triples for album using modified URIs
+
     g.add((modified_album_uri, RDF.type, mo.Release))
     g.add((modified_album_uri, mo.title, Literal(row['Album Name'])))
     g.add((modified_album_uri, mo.performer, modified_album_artist_uri))
     g.add((modified_album_uri, mo.name, Literal(row['Album Artist Name(s)'])))
 
-
-# Save the updated graph to a file (optional)
 g.serialize(destination="updated_musicontology.rdf", format="xml")
 
 print("Data added to the RDF graph successfully!")
@@ -98,10 +89,9 @@ query = prepareQuery(
     initNs={"rdf": RDF, "mo": mo}
 )
 
-# Execute the SPARQL query
 print("The artist: ")
 for row in g.query(query):
-    album_artist_name = row.albumArtistName  # Access the albumArtistName from the result row
+    album_artist_name = row.albumArtistName 
     print(album_artist_name)
 
 # SPARQL query to retrieve track names from the "First Of All" album
@@ -122,9 +112,9 @@ query = prepareQuery(
 )
 
 print("The tracks: ")
-# Execute the SPARQL query
+
 for row in g.query(query):
-    track_name = row.trackName  # Access the trackName from the result row
+    track_name = row.trackName
     print(track_name)
 
 # SPARQL query to retrieve the name of the artists of the first 5 most lively tracks
@@ -149,7 +139,6 @@ query = prepareQuery(
     initNs={"rdf": RDF, "mo": mo, "ex": ex, "xsd": XSD}
 )
 
-# Execute the SPARQL query
 print("The first 3 most lively tracks and their artists: ")
 for row in g.query(query):
     artist_name = row.artistName
